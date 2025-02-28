@@ -8,8 +8,11 @@ import PdfUploadFeature from '@/components/PdfUploadFeature';
 import Testimonials from '@/components/Testimonials';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
+  const { user } = useAuth();
+
   // Intersection Observer for reveal animations
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -63,7 +66,7 @@ const Index = () => {
       <DoubleEntryShowcase />
       <PdfUploadFeature />
       <Testimonials />
-      <CTA />
+      <CTA isAuthenticated={!!user} />
       <Footer />
     </div>
   );

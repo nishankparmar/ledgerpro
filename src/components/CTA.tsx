@@ -1,8 +1,13 @@
 
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
-const CTA = () => {
+interface CTAProps {
+  isAuthenticated?: boolean;
+}
+
+const CTA = ({ isAuthenticated = false }: CTAProps) => {
   return (
     <section className="py-16 sm:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,13 +29,28 @@ const CTA = () => {
               Join thousands of businesses that trust LedgER Pro for their accounting needs. Start your free trial today.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-              <Button className="bg-white text-ledger-800 hover:bg-ledger-50 border border-transparent px-8 py-6 text-base font-medium shadow-md">
-                Start free trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-6 text-base font-medium">
-                Schedule a demo
-              </Button>
+              {isAuthenticated ? (
+                <Link to="/dashboard">
+                  <Button className="bg-white text-ledger-800 hover:bg-ledger-50 border border-transparent px-8 py-6 text-base font-medium shadow-md">
+                    Go to dashboard
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/signup">
+                    <Button className="bg-white text-ledger-800 hover:bg-ledger-50 border border-transparent px-8 py-6 text-base font-medium shadow-md">
+                      Start free trial
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link to="/login">
+                    <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-6 text-base font-medium">
+                      Schedule a demo
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

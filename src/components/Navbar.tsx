@@ -1,13 +1,24 @@
 
 import { useState, useEffect } from 'react';
-import { Menu, X, ChevronDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, X, ChevronDown, LogOut, User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   // Handle scroll effect
   useEffect(() => {
@@ -26,6 +37,11 @@ const Navbar = () => {
   }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
     <a
@@ -106,12 +122,53 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" className="text-ledger-700 border-ledger-200 hover:bg-ledger-50">
-              Log in
-            </Button>
-            <Button className="bg-ledger-700 hover:bg-ledger-800 text-white">
-              Try for free
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="text-ledger-700 border-ledger-200 hover:bg-ledger-50">
+                    <User className="mr-2 h-4 w-4" />
+                    {user.email?.split('@')[0]}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Link to="/dashboard" className="flex items-center w-full">
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link to="/profile" className="flex items-center w-full">
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link to="/settings" className="flex items-center w-full">
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" className="text-ledger-700 border-ledger-200 hover:bg-ledger-50">
+                    Log in
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button className="bg-ledger-700 hover:bg-ledger-800 text-white">
+                    Try for free
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -142,22 +199,44 @@ const Navbar = () => {
             <MobileNavLink href="#contact" onClick={() => setIsMenuOpen(false)}>Contact</MobileNavLink>
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200">
-            <div className="flex items-center px-5">
-              <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-ledger-100 flex items-center justify-center text-ledger-700">
-                  <span className="text-sm font-medium">U</span>
+            {user ? (
+              <>
+                <div className="flex items-center px-5">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-ledger-100 flex items-center justify-center text-ledger-700">
+                      <span className="text-sm font-medium">{user.email?.[0].toUpperCase()}</span>
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <div className="text-base font-medium text-gray-800">{user.email?.split('@')[0]}</div>
+                    <div className="text-sm font-medium text-gray-500">{user.email}</div>
+                  </div>
                 </div>
+                <div className="mt-3 px-2 space-y-1">
+                  <Link to="/dashboard" className="block px-4 py-3 text-gray-700 hover:bg-ledger-50 rounded-lg transition-colors" onClick={() => setIsMenuOpen(false)}>
+                    Dashboard
+                  </Link>
+                  <Link to="/profile" className="block px-4 py-3 text-gray-700 hover:bg-ledger-50 rounded-lg transition-colors" onClick={() => setIsMenuOpen(false)}>
+                    Profile
+                  </Link>
+                  <Link to="/settings" className="block px-4 py-3 text-gray-700 hover:bg-ledger-50 rounded-lg transition-colors" onClick={() => setIsMenuOpen(false)}>
+                    Settings
+                  </Link>
+                  <button onClick={handleSignOut} className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-ledger-50 rounded-lg transition-colors">
+                    Sign out
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="mt-3 px-2 space-y-1">
+                <Link to="/login" className="block px-4 py-3 text-gray-700 hover:bg-ledger-50 rounded-lg transition-colors" onClick={() => setIsMenuOpen(false)}>
+                  Log in
+                </Link>
+                <Link to="/signup" className="block px-4 py-3 text-gray-700 hover:bg-ledger-50 rounded-lg transition-colors" onClick={() => setIsMenuOpen(false)}>
+                  Sign up
+                </Link>
               </div>
-              <div className="ml-3">
-                <div className="text-base font-medium text-gray-800">User</div>
-                <div className="text-sm font-medium text-gray-500">user@example.com</div>
-              </div>
-            </div>
-            <div className="mt-3 px-2 space-y-1">
-              <MobileNavLink href="#" onClick={() => setIsMenuOpen(false)}>Your Profile</MobileNavLink>
-              <MobileNavLink href="#" onClick={() => setIsMenuOpen(false)}>Settings</MobileNavLink>
-              <MobileNavLink href="#" onClick={() => setIsMenuOpen(false)}>Sign out</MobileNavLink>
-            </div>
+            )}
           </div>
         </div>
       )}
