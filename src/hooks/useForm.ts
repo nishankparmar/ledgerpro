@@ -25,11 +25,12 @@ export function useForm<T extends Record<string, any>>(initialValues: T) {
     return Object.keys(validationErrors).length === 0;
   };
 
-  const handleSubmit = async (
+  const handleSubmit = (
     onSubmit: (values: T) => Promise<void> | void,
     validationFn?: (values: T) => FormErrors<T>
   ) => {
-    return async (e: React.FormEvent) => {
+    // Return a function directly instead of a Promise<function>
+    return (e: React.FormEvent) => {
       e.preventDefault();
       
       const isValid = validate(validationFn);
@@ -37,10 +38,17 @@ export function useForm<T extends Record<string, any>>(initialValues: T) {
 
       setIsSubmitting(true);
       try {
-        await onSubmit(values);
+        // Handle both Promise and non-Promise returns from onSubmit
+        const result = onSubmit(values);
+        if (result instanceof Promise) {
+          result.finally(() => {
+            setIsSubmitting(false);
+          });
+        } else {
+          setIsSubmitting(false);
+        }
       } catch (error) {
         console.error('Form submission error:', error);
-      } finally {
         setIsSubmitting(false);
       }
     };
