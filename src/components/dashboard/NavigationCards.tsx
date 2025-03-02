@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, FileText, Receipt, CreditCard, BarChart3, DollarSign, Users } from "lucide-react";
+import { ArrowRight, FileText, Receipt, CreditCard, BarChart3, DollarSign, Users, BookOpen } from "lucide-react";
 
 interface NavigationCard {
   title: string;
@@ -16,6 +16,7 @@ const NavigationCards = () => {
   
   // Navigation cards data
   const navigationCards: NavigationCard[] = [
+    { title: "Chart of Accounts", description: "Manage your accounting chart structure", icon: BookOpen, link: "/accounts" },
     { title: "General Ledger", description: "View and manage your complete general ledger", icon: FileText, link: "/ledger" },
     { title: "Transactions", description: "Record and manage financial transactions", icon: Receipt, link: "/transactions" },
     { title: "Accounts", description: "Manage your chart of accounts", icon: CreditCard, link: "/accounts" },
