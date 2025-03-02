@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from '@/hooks/useForm';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Mail, Lock, AlertCircle } from 'lucide-react';
 
 const Login = () => {
   const { signIn, user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -51,12 +52,13 @@ const Login = () => {
         title: 'Login successful',
         description: 'Welcome back!',
       });
+      navigate('/dashboard');
     }
   };
 
-  // If user is already logged in, redirect to home page
+  // If user is already logged in, redirect to dashboard
   if (user) {
-    return <Navigate to="/" />;
+    return <Navigate to="/dashboard" />;
   }
 
   return (

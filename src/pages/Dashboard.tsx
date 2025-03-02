@@ -1,14 +1,37 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BarChart3, CreditCard, DollarSign, FileText, PiggyBank, Receipt, Users } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ArrowRight, BarChart3, CreditCard, DollarSign, FileText, LogOut, PiggyBank, Receipt, Users } from "lucide-react";
+import { useToast } from '@/hooks/use-toast';
+
+// Define Rupee formatting function
+export const formatRupees = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2
+  }).format(amount);
+};
 
 const Dashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -16,6 +39,23 @@ const Dashboard = () => {
       navigate('/login');
     }
   }, [user, loading, navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/login');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Logout failed",
+        description: "An error occurred while logging out",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -28,28 +68,28 @@ const Dashboard = () => {
     );
   }
 
-  // Mock data for financial metrics
+  // Mock data for financial metrics - updated to use Rupees
   const keyMetrics = [
-    { title: "Total Revenue", value: "$24,325.49", change: "+12.5%", icon: DollarSign, color: "text-green-500" },
-    { title: "Total Expenses", value: "$12,835.00", change: "-2.3%", icon: CreditCard, color: "text-red-500" },
-    { title: "Net Profit", value: "$11,490.49", change: "+18.7%", icon: PiggyBank, color: "text-blue-500" },
-    { title: "Cash Flow", value: "$8,450.20", change: "+6.1%", icon: BarChart3, color: "text-purple-500" },
+    { title: "Total Revenue", value: formatRupees(2432549), change: "+12.5%", icon: DollarSign, color: "text-green-500" },
+    { title: "Total Expenses", value: formatRupees(1283500), change: "-2.3%", icon: CreditCard, color: "text-red-500" },
+    { title: "Net Profit", value: formatRupees(1149049), change: "+18.7%", icon: PiggyBank, color: "text-blue-500" },
+    { title: "Cash Flow", value: formatRupees(845020), change: "+6.1%", icon: BarChart3, color: "text-purple-500" },
   ];
 
-  // Mock data for account balances
+  // Mock data for account balances - updated to use Rupees
   const accountBalances = [
-    { name: "Primary Checking", type: "Asset", balance: "$15,234.56" },
-    { name: "Business Savings", type: "Asset", balance: "$42,678.90" },
-    { name: "Credit Card", type: "Liability", balance: "-$3,456.78" },
-    { name: "Equipment Loan", type: "Liability", balance: "-$12,500.00" },
+    { name: "Primary Checking", type: "Asset", balance: formatRupees(1523456) },
+    { name: "Business Savings", type: "Asset", balance: formatRupees(4267890) },
+    { name: "Credit Card", type: "Liability", balance: formatRupees(-345678) },
+    { name: "Equipment Loan", type: "Liability", balance: formatRupees(-1250000) },
   ];
 
-  // Mock data for recent transactions
+  // Mock data for recent transactions - updated to use Rupees
   const recentTransactions = [
-    { id: "T1001", date: "2023-06-18", description: "Office Supplies", amount: "-$234.56", category: "Expense" },
-    { id: "T1002", date: "2023-06-17", description: "Client Payment - ABC Corp", amount: "+$1,500.00", category: "Income" },
-    { id: "T1003", date: "2023-06-15", description: "Monthly Rent", amount: "-$2,000.00", category: "Expense" },
-    { id: "T1004", date: "2023-06-14", description: "Consulting Services", amount: "+$3,250.00", category: "Income" },
+    { id: "T1001", date: "2023-06-18", description: "Office Supplies", amount: formatRupees(-23456), category: "Expense" },
+    { id: "T1002", date: "2023-06-17", description: "Client Payment - ABC Corp", amount: formatRupees(150000), category: "Income" },
+    { id: "T1003", date: "2023-06-15", description: "Monthly Rent", amount: formatRupees(-200000), category: "Expense" },
+    { id: "T1004", date: "2023-06-14", description: "Consulting Services", amount: formatRupees(325000), category: "Income" },
   ];
 
   // Mock data for tax compliance
@@ -67,21 +107,44 @@ const Dashboard = () => {
     { title: "Reports", description: "Generate financial reports and statements", icon: BarChart3, link: "/reports" },
     { title: "Tax Management", description: "Track and manage tax obligations", icon: DollarSign, link: "/taxes" },
     { title: "User Access", description: "Manage user roles and permissions", icon: Users, link: "/users" },
+    { title: "My Profile", description: "View and edit your personal information", icon: Users, link: "/profile" },
   ];
 
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-7xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-ledger-800">Financial Dashboard</h1>
-        <p className="text-sm text-ledger-500">
-          Last updated: {new Date().toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-ledger-500 hidden sm:block">
+            Last updated: {new Date().toLocaleDateString('en-IN', { 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </p>
+          <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You will be logged out of your account and redirected to the login page.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* Key Metrics Section */}
@@ -136,7 +199,7 @@ const Dashboard = () => {
                     <p className="font-medium">{account.name}</p>
                     <p className="text-sm text-muted-foreground">{account.type}</p>
                   </div>
-                  <p className={`font-mono font-medium ${account.balance.startsWith('-') ? 'text-red-500' : 'text-green-600'}`}>
+                  <p className={`font-mono font-medium ${account.balance.includes('-') ? 'text-red-500' : 'text-green-600'}`}>
                     {account.balance}
                   </p>
                 </div>
@@ -175,7 +238,7 @@ const Dashboard = () => {
                       <td className="py-3 text-sm">{transaction.id}</td>
                       <td className="py-3 text-sm">{transaction.date}</td>
                       <td className="py-3 text-sm">{transaction.description}</td>
-                      <td className={`py-3 text-sm text-right font-mono ${transaction.amount.startsWith('+') ? 'text-green-600' : 'text-red-500'}`}>
+                      <td className={`py-3 text-sm text-right font-mono ${!transaction.amount.includes('-') ? 'text-green-600' : 'text-red-500'}`}>
                         {transaction.amount}
                       </td>
                     </tr>
