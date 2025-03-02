@@ -8,17 +8,6 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { useAccounts } from '@/hooks/useAccounts';
 import {
   Account,
@@ -26,12 +15,18 @@ import {
   AccountClassification,
   CreateAccountPayload,
   UpdateAccountPayload,
-  accountTypeLabels,
-  accountClassifications,
-  accountClassificationLabels
+  accountClassifications
 } from '@/types/accounting';
 import { useForm } from '@/hooks/useForm';
 import { useToast } from '@/hooks/use-toast';
+import AccountCodeField from './form-fields/AccountCodeField';
+import AccountNameField from './form-fields/AccountNameField';
+import AccountTypeField from './form-fields/AccountTypeField';
+import AccountClassificationField from './form-fields/AccountClassificationField';
+import AccountDescriptionField from './form-fields/AccountDescriptionField';
+import AccountInitialBalanceField from './form-fields/AccountInitialBalanceField';
+import AccountStatusField from './form-fields/AccountStatusField';
+import { validateAccountForm } from './utils/accountFormValidator';
 
 interface AccountFormProps {
   account: Account | null;
@@ -87,39 +82,10 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
     }
   }, [values.type, setValues]);
 
-  // Validation function
-  const validateForm = (formValues: typeof initialValues) => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formValues.code.trim()) {
-      newErrors.code = 'Account code is required';
-    } else if (!/^\d+$/.test(formValues.code)) {
-      newErrors.code = 'Account code must contain only numbers';
-    }
-    
-    if (!formValues.name.trim()) {
-      newErrors.name = 'Account name is required';
-    }
-    
-    if (!formValues.type) {
-      newErrors.type = 'Account type is required';
-    }
-    
-    if (!formValues.classification) {
-      newErrors.classification = 'Account classification is required';
-    }
-    
-    if (!account && formValues.initialBalance < 0) {
-      newErrors.initialBalance = 'Initial balance cannot be negative';
-    }
-    
-    return newErrors;
-  };
-
   // Submit handler
   const onSubmit = async () => {
     try {
-      const validationErrors = validateForm(values);
+      const validationErrors = validateAccountForm(values, !!account);
       
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
@@ -194,153 +160,54 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-4 py-4">
             {/* Account Code */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="code" className="text-right">
-                Code
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="code"
-                  name="code"
-                  value={values.code}
-                  onChange={handleChange}
-                  className={errors.code ? 'border-red-500' : ''}
-                />
-                {errors.code && (
-                  <p className="text-red-500 text-sm mt-1">{errors.code}</p>
-                )}
-              </div>
-            </div>
+            <AccountCodeField 
+              value={values.code} 
+              onChange={handleChange} 
+              error={errors.code} 
+            />
             
             {/* Account Name */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="name"
-                  name="name"
-                  value={values.name}
-                  onChange={handleChange}
-                  className={errors.name ? 'border-red-500' : ''}
-                />
-                {errors.name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-                )}
-              </div>
-            </div>
+            <AccountNameField 
+              value={values.name} 
+              onChange={handleChange} 
+              error={errors.name} 
+            />
             
             {/* Account Type */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">
-                Type
-              </Label>
-              <div className="col-span-3">
-                <Select
-                  name="type"
-                  value={values.type}
-                  onValueChange={(value) => setValues({ ...values, type: value as AccountType })}
-                >
-                  <SelectTrigger className={errors.type ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select account type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(accountTypeLabels).map(([type, label]) => (
-                      <SelectItem key={type} value={type}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.type && (
-                  <p className="text-red-500 text-sm mt-1">{errors.type}</p>
-                )}
-              </div>
-            </div>
+            <AccountTypeField 
+              value={values.type as AccountType} 
+              onValueChange={(value) => setValues({ ...values, type: value })} 
+              error={errors.type} 
+            />
             
             {/* Account Classification */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="classification" className="text-right">
-                Classification
-              </Label>
-              <div className="col-span-3">
-                <Select
-                  name="classification"
-                  value={values.classification}
-                  onValueChange={(value) => setValues({ ...values, classification: value as AccountClassification })}
-                >
-                  <SelectTrigger className={errors.classification ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select classification" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableClassifications.map((classification) => (
-                      <SelectItem key={classification} value={classification}>
-                        {accountClassificationLabels[classification]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.classification && (
-                  <p className="text-red-500 text-sm mt-1">{errors.classification}</p>
-                )}
-              </div>
-            </div>
+            <AccountClassificationField 
+              value={values.classification as AccountClassification} 
+              onValueChange={(value) => setValues({ ...values, classification: value })} 
+              availableClassifications={availableClassifications}
+              error={errors.classification} 
+            />
             
             {/* Description */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <div className="col-span-3">
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={values.description}
-                  onChange={handleTextAreaChange}
-                  rows={3}
-                />
-              </div>
-            </div>
+            <AccountDescriptionField 
+              value={values.description} 
+              onChange={handleTextAreaChange} 
+            />
             
             {/* Initial Balance - only for new accounts */}
             {!account && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="initialBalance" className="text-right">
-                  Initial Balance (₹)
-                </Label>
-                <div className="col-span-3">
-                  <Input
-                    id="initialBalance"
-                    name="initialBalance"
-                    type="number"
-                    value={values.initialBalance}
-                    onChange={handleChange}
-                    className={errors.initialBalance ? 'border-red-500' : ''}
-                  />
-                  {errors.initialBalance && (
-                    <p className="text-red-500 text-sm mt-1">{errors.initialBalance}</p>
-                  )}
-                </div>
-              </div>
+              <AccountInitialBalanceField 
+                value={values.initialBalance} 
+                onChange={handleChange} 
+                error={errors.initialBalance} 
+              />
             )}
             
             {/* Active Status */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="isActive" className="text-right">
-                Active
-              </Label>
-              <div className="col-span-3 flex items-center space-x-2">
-                <Switch
-                  id="isActive"
-                  checked={values.isActive}
-                  onCheckedChange={(checked) => setValues({ ...values, isActive: checked })}
-                />
-                <Label htmlFor="isActive" className="cursor-pointer">
-                  {values.isActive ? 'Active' : 'Inactive'}
-                </Label>
-              </div>
-            </div>
+            <AccountStatusField 
+              isActive={values.isActive} 
+              onToggle={(checked) => setValues({ ...values, isActive: checked })} 
+            />
           </div>
           
           <DialogFooter>
