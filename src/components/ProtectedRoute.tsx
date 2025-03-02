@@ -1,12 +1,11 @@
 
-import { Navigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
+// We're removing the ProtectedRouteProps interface since we'll use Outlet pattern
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute = () => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -20,7 +19,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  // Using Outlet instead of children since we're using the Route element pattern
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

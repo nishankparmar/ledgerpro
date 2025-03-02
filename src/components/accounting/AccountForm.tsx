@@ -23,6 +23,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import {
   Account,
   AccountType,
+  AccountClassification,
   CreateAccountPayload,
   UpdateAccountPayload,
   accountTypeLabels,
@@ -41,7 +42,7 @@ interface AccountFormProps {
 const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) => {
   const { createAccount, updateAccount } = useAccounts();
   const { toast } = useToast();
-  const [availableClassifications, setAvailableClassifications] = useState<string[]>([]);
+  const [availableClassifications, setAvailableClassifications] = useState<AccountClassification[]>([]);
   
   // Set up form with initial values
   const initialValues = account 
@@ -58,7 +59,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
         code: '', 
         name: '', 
         type: 'asset' as AccountType, 
-        classification: 'current-asset', 
+        classification: 'current-asset' as AccountClassification, 
         description: '',
         isActive: true,
         initialBalance: 0
@@ -80,7 +81,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
       setAvailableClassifications(classifications);
       
       // If current classification is not valid for the new type, reset it
-      if (!classifications.includes(values.classification)) {
+      if (!classifications.includes(values.classification as AccountClassification)) {
         setValues({ ...values, classification: classifications[0] });
       }
     }
@@ -131,7 +132,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
           code: values.code,
           name: values.name,
           type: values.type as AccountType,
-          classification: values.classification,
+          classification: values.classification as AccountClassification,
           description: values.description,
           isActive: values.isActive
         };
@@ -147,7 +148,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
           code: values.code,
           name: values.name,
           type: values.type as AccountType,
-          classification: values.classification,
+          classification: values.classification as AccountClassification,
           description: values.description,
           isActive: values.isActive,
           initialBalance: values.initialBalance
@@ -169,6 +170,16 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
         variant: 'destructive'
       });
     }
+  };
+
+  // Custom handler for textarea to match the type expectations
+  const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    handleChange({
+      target: {
+        name: e.target.name,
+        value: e.target.value
+      }
+    } as React.ChangeEvent<HTMLInputElement>);
   };
 
   return (
@@ -257,7 +268,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
                 <Select
                   name="classification"
                   value={values.classification}
-                  onValueChange={(value) => setValues({ ...values, classification: value })}
+                  onValueChange={(value) => setValues({ ...values, classification: value as AccountClassification })}
                 >
                   <SelectTrigger className={errors.classification ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select classification" />
@@ -265,7 +276,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
                   <SelectContent>
                     {availableClassifications.map((classification) => (
                       <SelectItem key={classification} value={classification}>
-                        {accountClassificationLabels[classification as keyof typeof accountClassificationLabels]}
+                        {accountClassificationLabels[classification]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -286,7 +297,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, isOpen, onClose }) =
                   id="description"
                   name="description"
                   value={values.description}
-                  onChange={handleChange}
+                  onChange={handleTextAreaChange}
                   rows={3}
                 />
               </div>
