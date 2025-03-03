@@ -3,14 +3,31 @@ import React, { useState } from 'react';
 import { useAccounts } from '@/hooks/useAccounts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Filter, Download, ArrowUpDown } from 'lucide-react';
+import { Plus, Filter, Download, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TransactionTable from '@/components/accounting/ledger/TransactionTable';
 import TransactionForm from '@/components/accounting/ledger/TransactionForm';
+import { useTransactions } from '@/hooks/useTransactions';
 
 const GeneralLedger: React.FC = () => {
-  const { accounts } = useAccounts();
+  const { accounts, loading: accountsLoading } = useAccounts();
+  const { loading: transactionsLoading } = useTransactions();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+
+  const isLoading = accountsLoading || transactionsLoading;
+
+  // Function to export transactions to CSV
+  const exportTransactions = () => {
+    alert('Export feature will be implemented soon.');
+    // This would typically generate a CSV and trigger a download
+  };
+
+  // Function to handle filter button
+  const handleFilterClick = () => {
+    alert('Filter feature will be implemented soon.');
+    // This would typically open a filter modal/drawer
+  };
 
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-7xl">
@@ -23,7 +40,7 @@ const GeneralLedger: React.FC = () => {
           <Button 
             variant="outline" 
             className="flex items-center gap-1"
-            onClick={() => {}}
+            onClick={handleFilterClick}
           >
             <Filter className="h-4 w-4" />
             <span>Filter</span>
@@ -31,7 +48,7 @@ const GeneralLedger: React.FC = () => {
           <Button 
             variant="outline" 
             className="flex items-center gap-1"
-            onClick={() => {}}
+            onClick={exportTransactions}
           >
             <Download className="h-4 w-4" />
             <span>Export</span>
@@ -39,6 +56,7 @@ const GeneralLedger: React.FC = () => {
           <Button 
             className="flex items-center gap-1"
             onClick={() => setIsFormOpen(true)}
+            disabled={isLoading}
           >
             <Plus className="h-4 w-4" />
             <span>New Transaction</span>
@@ -46,8 +64,13 @@ const GeneralLedger: React.FC = () => {
         </div>
       </div>
       
-      <Tabs defaultValue="all" className="mb-6">
-        <TabsList>
+      <Tabs 
+        defaultValue="all" 
+        value={activeTab} 
+        onValueChange={setActiveTab}
+        className="mb-6"
+      >
+        <TabsList className="w-full overflow-x-auto flex flex-nowrap md:flex-wrap">
           <TabsTrigger value="all">All Transactions</TabsTrigger>
           <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="purchases">Purchases</TabsTrigger>
@@ -63,7 +86,14 @@ const GeneralLedger: React.FC = () => {
               <CardDescription>View and manage all financial transactions</CardDescription>
             </CardHeader>
             <CardContent>
-              <TransactionTable />
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading transactions...</span>
+                </div>
+              ) : (
+                <TransactionTable />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -75,9 +105,14 @@ const GeneralLedger: React.FC = () => {
               <CardDescription>View and manage sales invoices and receipts</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
-                Sales module coming soon...
-              </p>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading sales transactions...</span>
+                </div>
+              ) : (
+                <TransactionTable filterType="sale" />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -89,9 +124,14 @@ const GeneralLedger: React.FC = () => {
               <CardDescription>View and manage purchase invoices and payments</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
-                Purchases module coming soon...
-              </p>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading purchase transactions...</span>
+                </div>
+              ) : (
+                <TransactionTable filterType="purchase" />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -103,9 +143,14 @@ const GeneralLedger: React.FC = () => {
               <CardDescription>View and manage money received</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
-                Receipts module coming soon...
-              </p>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading receipt transactions...</span>
+                </div>
+              ) : (
+                <TransactionTable filterType="receipt" />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -117,9 +162,14 @@ const GeneralLedger: React.FC = () => {
               <CardDescription>View and manage money paid</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
-                Payments module coming soon...
-              </p>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading payment transactions...</span>
+                </div>
+              ) : (
+                <TransactionTable filterType="payment" />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -131,9 +181,14 @@ const GeneralLedger: React.FC = () => {
               <CardDescription>View and manage manual journal entries</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
-                Journal entry module coming soon...
-              </p>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading journal entries...</span>
+                </div>
+              ) : (
+                <TransactionTable filterType="journal" />
+              )}
             </CardContent>
           </Card>
         </TabsContent>

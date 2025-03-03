@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog,
   DialogContent,
@@ -21,7 +21,9 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Calendar } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import TransactionLineItems from './TransactionLineItems';
+import { useTransactions } from '@/hooks/useTransactions';
 
 interface TransactionFormProps {
   accounts: Account[];
@@ -46,6 +48,9 @@ const transactionTypes = [
 ];
 
 const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, isOpen, onClose }) => {
+  const { createTransaction } = useTransactions();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [transactionType, setTransactionType] = useState('journal');
   const [reference, setReference] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -59,6 +64,24 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, isOpen, onC
   const totalDebits = entries.reduce((sum, entry) => sum + (entry.debit || 0), 0);
   const totalCredits = entries.reduce((sum, entry) => sum + (entry.credit || 0), 0);
   const isBalanced = totalDebits === totalCredits && totalDebits > 0;
+  
+  // Generate a default reference number based on transaction type
+  useEffect(() => {
+    if (!reference) {
+      const prefix = transactionType === 'journal' ? 'JE-' : 
+                    transactionType === 'sale' ? 'INV-' :
+                    transactionType === 'purchase' ? 'PUR-' :
+                    transactionType === 'receipt' ? 'RCT-' :
+                    'PMT-';
+      
+      const date = new Date();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      
+      setReference(`${prefix}${date.getFullYear()}${month}${day}-${randomNum}`);
+    }
+  }, [transactionType, reference]);
   
   const handleAddEntry = () => {
     setEntries([...entries, { accountId: '', description: '', debit: 0, credit: 0 }]);
@@ -101,18 +124,82 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, isOpen, onC
     setEntries(newEntries);
   };
 
-  const handleSubmit = () => {
-    // Eventually this will save the transaction to the database
-    console.log({
-      type: transactionType,
-      reference,
-      date,
-      description,
-      entries
-    });
+  // Validate the form data
+  const validateForm = () => {
+    // Check if all entries have account selected
+    if (entries.some(entry => !entry.accountId)) {
+      toast({
+        title: 'Validation Error',
+        description: 'All entries must have an account selected.',
+        variant: 'destructive'
+      });
+      return false;
+    }
+
+    // Check if transaction is balanced
+    if (!isBalanced) {
+      toast({
+        title: 'Validation Error',
+        description: 'Transaction must be balanced. Total debits must equal total credits.',
+        variant: 'destructive'
+      });
+      return false;
+    }
+
+    // Check if there are at least two entries
+    if (entries.length < 2) {
+      toast({
+        title: 'Validation Error',
+        description: 'Transaction must have at least two entries.',
+        variant: 'destructive'
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
     
-    // Close the form
-    onClose();
+    try {
+      setIsSubmitting(true);
+      
+      // Filter out empty entries
+      const validEntries = entries.filter(
+        entry => entry.accountId && (entry.debit > 0 || entry.credit > 0)
+      );
+      
+      // Create transaction payload
+      const transactionData = {
+        date,
+        type: transactionType,
+        reference,
+        description,
+        entries: validEntries
+      };
+      
+      // Save transaction
+      await createTransaction(transactionData);
+      
+      // Show success message
+      toast({
+        title: 'Transaction Created',
+        description: 'Your transaction has been recorded successfully.'
+      });
+      
+      // Close the form
+      onClose();
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create transaction. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -215,13 +302,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, isOpen, onC
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
           <Button 
             type="submit" 
             onClick={handleSubmit}
-            disabled={!isBalanced}
+            disabled={!isBalanced || isSubmitting}
           >
-            {isBalanced ? 'Save Transaction' : 'Entries Must Balance'}
+            {isSubmitting ? 'Saving...' : isBalanced ? 'Save Transaction' : 'Entries Must Balance'}
           </Button>
         </DialogFooter>
       </DialogContent>
