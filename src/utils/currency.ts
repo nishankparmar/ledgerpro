@@ -7,3 +7,12 @@ export const formatRupees = (amount: number) => {
     maximumFractionDigits: 2
   }).format(amount);
 };
+
+// Utility function for generic currency formatting (USD default)
+export const formatCurrency = (amount: number, currency = 'USD') => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+    maximumFractionDigits: 2
+  }).format(amount);
+};

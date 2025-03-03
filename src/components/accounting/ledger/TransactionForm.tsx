@@ -75,23 +75,26 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ accounts, isOpen, onC
     const newEntries = [...entries];
     
     if (field === 'debit' && value !== 0) {
-      // If debit is set, clear credit
+      // If debit is set, clear credit and ensure value is a number
       newEntries[index] = { 
         ...newEntries[index],
-        [field]: value,
+        [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
         credit: 0
       };
     } else if (field === 'credit' && value !== 0) {
-      // If credit is set, clear debit
+      // If credit is set, clear debit and ensure value is a number
       newEntries[index] = { 
         ...newEntries[index],
-        [field]: value,
+        [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
         debit: 0
       };
     } else {
+      // For other fields
       newEntries[index] = { 
         ...newEntries[index],
-        [field]: value
+        [field]: field === 'debit' || field === 'credit' 
+          ? (typeof value === 'string' ? parseFloat(value) || 0 : value)
+          : value
       };
     }
     
