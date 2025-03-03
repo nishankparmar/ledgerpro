@@ -16,53 +16,30 @@ export const useAccounts = () => {
     setError(null);
     
     try {
-      // For now, we're simulating data - this will be replaced with Supabase 
-      // query once we've created the tables
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .order('code', { ascending: true });
       
-      // Placeholder for actual implementation
-      console.log('Fetching accounts...');
+      if (error) {
+        throw error;
+      }
       
-      // Dummy data for now - this will be replaced with Supabase query
-      const dummyAccounts: Account[] = [
-        {
-          id: '1',
-          code: '1001',
-          name: 'Cash',
-          type: 'asset',
-          classification: 'current-asset',
-          description: 'Cash on hand',
-          balance: 50000,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: '2',
-          code: '1002',
-          name: 'Bank Account',
-          type: 'asset',
-          classification: 'current-asset',
-          description: 'Primary bank account',
-          balance: 1500000,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: '3',
-          code: '2001',
-          name: 'Accounts Payable',
-          type: 'liability',
-          classification: 'current-liability',
-          description: 'Money owed to suppliers',
-          balance: 75000,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
+      // Transform the data to match our Account type
+      const transformedAccounts: Account[] = data.map(account => ({
+        id: account.id,
+        code: account.code,
+        name: account.name,
+        type: account.type as Account['type'],
+        classification: account.classification as Account['classification'],
+        description: account.description || '',
+        balance: account.balance,
+        isActive: account.is_active,
+        createdAt: account.created_at,
+        updatedAt: account.updated_at
+      }));
       
-      setAccounts(dummyAccounts);
+      setAccounts(transformedAccounts);
     } catch (err) {
       console.error('Error fetching accounts:', err);
       setError('Failed to fetch accounts. Please try again.');
@@ -79,15 +56,36 @@ export const useAccounts = () => {
   // Create a new account
   const createAccount = useCallback(async (accountData: CreateAccountPayload) => {
     try {
-      // For now we're simulating - this will be replaced with Supabase insertion
-      console.log('Creating account with data:', accountData);
+      const { data, error } = await supabase
+        .from('accounts')
+        .insert([{
+          code: accountData.code,
+          name: accountData.name,
+          type: accountData.type,
+          classification: accountData.classification,
+          description: accountData.description || '',
+          balance: accountData.initialBalance || 0,
+          is_active: accountData.isActive
+        }])
+        .select()
+        .single();
       
+      if (error) {
+        throw error;
+      }
+      
+      // Transform the returned data to match our Account type
       const newAccount: Account = {
-        id: Date.now().toString(), // This would be a UUID in production
-        ...accountData,
-        balance: accountData.initialBalance || 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        type: data.type as Account['type'],
+        classification: data.classification as Account['classification'],
+        description: data.description || '',
+        balance: data.balance,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
       };
       
       setAccounts(prev => [...prev, newAccount]);
@@ -102,7 +100,7 @@ export const useAccounts = () => {
       console.error('Error creating account:', err);
       toast({
         title: 'Error',
-        description: 'Failed to create account. Please try again.',
+        description: err instanceof Error ? err.message : 'Failed to create account. Please try again.',
         variant: 'destructive',
       });
       throw err;
@@ -112,41 +110,74 @@ export const useAccounts = () => {
   // Update an existing account
   const updateAccount = useCallback(async (id: string, accountData: UpdateAccountPayload) => {
     try {
-      // For now we're simulating - this will be replaced with Supabase update
-      console.log('Updating account:', id, accountData);
+      // Convert camelCase to snake_case for the Supabase API
+      const updateData: Record<string, any> = {};
+      if (accountData.code) updateData.code = accountData.code;
+      if (accountData.name) updateData.name = accountData.name;
+      if (accountData.type) updateData.type = accountData.type;
+      if (accountData.classification) updateData.classification = accountData.classification;
+      if (accountData.description !== undefined) updateData.description = accountData.description;
+      if (accountData.balance !== undefined) updateData.balance = accountData.balance;
+      if (accountData.isActive !== undefined) updateData.is_active = accountData.isActive;
       
-      setAccounts(prev => prev.map(account => 
-        account.id === id 
-          ? { 
-              ...account, 
-              ...accountData, 
-              updatedAt: new Date().toISOString() 
-            } 
-          : account
-      ));
+      const { data, error } = await supabase
+        .from('accounts')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Transform the returned data to match our Account type
+      const updatedAccount: Account = {
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        type: data.type as Account['type'],
+        classification: data.classification as Account['classification'],
+        description: data.description || '',
+        balance: data.balance,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+      
+      setAccounts(prev => 
+        prev.map(account => account.id === id ? updatedAccount : account)
+      );
       
       toast({
         title: 'Account Updated',
         description: 'Account has been updated successfully.',
       });
+      
+      return updatedAccount;
     } catch (err) {
       console.error('Error updating account:', err);
       toast({
         title: 'Error',
-        description: 'Failed to update account. Please try again.',
+        description: err instanceof Error ? err.message : 'Failed to update account. Please try again.',
         variant: 'destructive',
       });
       throw err;
     }
   }, [toast]);
 
-  // Delete an account (or mark as inactive)
+  // Delete an account
   const deleteAccount = useCallback(async (id: string) => {
     try {
-      // For now we're simulating - this will be replaced with Supabase deletion
-      console.log('Deleting account:', id);
+      const { error } = await supabase
+        .from('accounts')
+        .delete()
+        .eq('id', id);
       
-      // In a real app, we might just mark it as inactive rather than physically delete
+      if (error) {
+        throw error;
+      }
+      
       setAccounts(prev => prev.filter(account => account.id !== id));
       
       toast({
@@ -157,7 +188,7 @@ export const useAccounts = () => {
       console.error('Error deleting account:', err);
       toast({
         title: 'Error',
-        description: 'Failed to delete account. Please try again.',
+        description: err instanceof Error ? err.message : 'Failed to delete account. Please try again.',
         variant: 'destructive',
       });
       throw err;
